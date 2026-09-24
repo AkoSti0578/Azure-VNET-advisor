@@ -1,69 +1,69 @@
 # Azure Subnet Planner
 
-Windows-applicatie (WPF, .NET 8) die adviseert welk **address prefix** je kunt gebruiken voor een nieuw Azure VNET, zonder overlap met:
+Windows application (WPF, .NET 8) that recommends which **address prefix** to use for a new Azure VNET, without overlapping:
 
-- **bestaande Azure VNETs** – ingelezen uit een CSV-export van Azure Resource Graph;
-- **lokale / on-premises netwerken** – die je zelf invult (kantoor, datacenter, VPN);
-- **door Azure gereserveerde ranges** – 127.0.0.0/8, 169.254.0.0/16, 168.63.129.16/32, 224.0.0.0/4 en 255.255.255.255/32.
+- **existing Azure VNETs** – read from a CSV export of Azure Resource Graph;
+- **local / on-premises networks** – entered by you (office, datacenter, VPN);
+- **ranges reserved by Azure** – 127.0.0.0/8, 169.254.0.0/16, 168.63.129.16/32, 224.0.0.0/4 and 255.255.255.255/32.
 
-Daarnaast stelt de app een **subnetindeling** voor binnen het nieuwe VNET (inclusief GatewaySubnet, AzureBastionSubnet, AzureFirewallSubnet, …) en houdt rekening met de 5 adressen die Azure per subnet reserveert.
+It also proposes a **subnet layout** inside the new VNET (including GatewaySubnet, AzureBastionSubnet, AzureFirewallSubnet, …) and accounts for the 5 addresses Azure reserves in every subnet.
 
-De applicatie maakt geen verbinding met Azure of internet; alle gegevens blijven lokaal.
+The application does not connect to Azure or the internet; all data stays on your machine.
 
-## Werkwijze
+## How to use
 
-1. **Bestaande VNETs exporteren** – open *Resource Graph Explorer* in de Azure Portal, voer de query uit [`kql/existing-vnets.kql`](kql/existing-vnets.kql) uit (ook te kopiëren via de knop *KQL-query kopiëren* in de app) en kies *Download as CSV*.
-2. **CSV importeren** – klik op *CSV importeren...*. Komma-, puntkomma- en tab-gescheiden bestanden worden ondersteund; IPv6-prefixes worden overgeslagen.
-3. **Lokale netwerken invullen** – één CIDR per regel, tekst na `#` is een omschrijving:
+1. **Export existing VNETs** – open *Resource Graph Explorer* in the Azure Portal, run the query in [`kql/existing-vnets.kql`](kql/existing-vnets.kql) (also available via the *Copy KQL query* button in the app) and choose *Download as CSV*.
+2. **Import the CSV** – click *Import CSV...*. Comma, semicolon and tab separated files are supported; IPv6 prefixes are skipped.
+3. **Enter local networks** – one CIDR per line, text after `#` is a description:
    ```
-   192.168.0.0/16  # Kantoor
+   192.168.0.0/16  # Office
    172.16.10.0/24  # Datacenter
    ```
-4. **Zoekbereik** – de adresruimte waarin gezocht wordt, in volgorde van voorkeur (standaard `10.0.0.0/8`). Per zoekbereik zie je hoeveel ruimte er nog vrij is.
-5. **Nieuw VNET** – kies een vaste grootte (bijv. /22) óf laat de grootte berekenen op basis van de subnets die je nodig hebt (optioneel met groeiruimte).
-6. Klik op **Adviseer address prefix**. Je krijgt het aanbevolen prefix plus alternatieven, met per voorstel de subnetindeling. Die kun je kopiëren, als CSV exporteren of als Azure CLI-commando's kopiëren.
+4. **Search range** – the address space to search, in order of preference (default `10.0.0.0/8`). For each range the app shows how much space is still free.
+5. **New VNET** – pick a fixed size (e.g. /22) or let the size be calculated from the subnets you need (optionally with room for growth).
+6. Click **Recommend address prefix**. You get the recommended prefix plus alternatives, each with a subnet layout that you can copy, export as CSV or copy as Azure CLI commands.
 
-Verder:
+Additional tabs:
 
-- **Prefix controleren** – controleer een zelfgekozen prefix en zie precies met welke VNETs/netwerken het overlapt.
-- **Bezette adresruimte** – overzicht (met filter) van alle bezette ranges.
-- **Meldingen** – importwaarschuwingen en bestaande overlappingen tussen VNETs en/of lokale netwerken.
+- **Check prefix** – check a prefix of your own and see exactly which VNETs/networks it overlaps.
+- **Occupied address space** – filterable overview of all occupied ranges.
+- **Warnings** – import warnings and existing overlaps between VNETs and/or local networks.
 
-De ingevulde lokale netwerken, het zoekbereik en het laatst gebruikte CSV-bestand worden bewaard in `%APPDATA%\AzureSubnetPlanner\settings.json`.
+Local networks, search ranges and the last used CSV file are saved in `%APPDATA%\AzureSubnetPlanner\settings.json`.
 
-## MSI bouwen
+## Building the MSI
 
-### Via GitHub Actions
+### With GitHub Actions
 
-De workflow [`.github/workflows/build-msi.yml`](.github/workflows/build-msi.yml) draait bij elke push op `windows-latest`, voert de tests uit en publiceert de MSI als build-artifact (*Actions → Build MSI → Artifacts*). Push een tag zoals `v1.2.0` om een GitHub Release met de MSI te maken.
+The workflow [`.github/workflows/build-msi.yml`](.github/workflows/build-msi.yml) runs on every push on `windows-latest`, runs the tests and publishes the MSI as a build artifact (*Actions → Build MSI → Artifacts*). Push a tag such as `v1.2.0` to create a GitHub Release containing the MSI.
 
-### Lokaal (Windows)
+### Locally (Windows)
 
-Vereist: [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0). WiX Toolset wordt automatisch via NuGet opgehaald.
+Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0). WiX Toolset is restored automatically from NuGet.
 
 ```powershell
 ./build.ps1 -Version 1.0.0
 ```
 
-Resultaat: `artifacts\msi\AzureSubnetPlanner.msi`. De app wordt self-contained gepubliceerd, dus op de doelcomputer is geen .NET-runtime nodig. De MSI installeert per machine in `C:\Program Files\Azure Subnet Planner` met snelkoppelingen in het Startmenu en op het bureaublad; een nieuwere versie vervangt automatisch de oude.
+Output: `artifacts\msi\AzureSubnetPlanner.msi`. The app is published self-contained, so no .NET runtime is needed on the target machine. The MSI installs per machine into `C:\Program Files\Azure Subnet Planner` with shortcuts in the Start menu and on the desktop; a newer version automatically replaces the old one.
 
-Alleen de app starten tijdens ontwikkeling:
+To just run the app during development:
 
 ```powershell
 dotnet run --project src/AzureSubnetPlanner.App
 ```
 
-## Projectstructuur
+## Project structure
 
-| Map | Inhoud |
+| Folder | Contents |
 | --- | --- |
-| `src/AzureSubnetPlanner.Core` | Rekenlogica: CIDR-parsing, CSV-import, zoeken naar vrije blokken, subnetindeling (platformonafhankelijk) |
-| `src/AzureSubnetPlanner.App` | WPF-gebruikersinterface |
-| `tests/AzureSubnetPlanner.Core.Tests` | xUnit-tests voor de rekenlogica |
-| `installer` | WiX v5-project voor de MSI |
-| `kql` | Resource Graph-query voor de export van bestaande VNETs |
-| `samples` | Voorbeeld-CSV om de app te proberen |
+| `src/AzureSubnetPlanner.Core` | Core logic: CIDR parsing, CSV import, free block search, subnet layout (cross-platform) |
+| `src/AzureSubnetPlanner.App` | WPF user interface |
+| `tests/AzureSubnetPlanner.Core.Tests` | xUnit tests for the core logic |
+| `installer` | WiX v5 project for the MSI |
+| `kql` | Resource Graph query to export existing VNETs |
+| `samples` | Sample CSV to try the app |
 
-## Hoe het advies werkt
+## How the recommendation works
 
-Alle bezette ranges worden samengevoegd tot aaneengesloten blokken. Binnen elk zoekbereik worden de vrije gaten bepaald, en daarin het eerste blok van de gevraagde grootte dat correct is uitgelijnd (een /22 begint altijd op een veelvoud van 1.024 adressen). Zo blijft de adresruimte compact en worden kleine gaten tussen bestaande VNETs zinvol benut. Subnets worden binnen het VNET van groot naar klein geplaatst, zodat elk subnet uitgelijnd is zonder verspilling.
+All occupied ranges are merged into contiguous blocks. Within each search range the free gaps are determined, and in those gaps the first block of the requested size that is correctly aligned is selected (a /22 always starts on a multiple of 1,024 addresses). This keeps the address space compact and makes good use of small gaps between existing VNETs. Subnets are placed inside the VNET from largest to smallest, so every subnet is aligned without wasting space.

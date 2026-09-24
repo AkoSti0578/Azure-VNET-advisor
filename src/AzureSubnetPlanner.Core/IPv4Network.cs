@@ -54,7 +54,7 @@ public readonly record struct IPv4Network : IComparable<IPv4Network>
     public static IPv4Network Parse(string text) =>
         TryParse(text, out var network)
             ? network
-            : throw new FormatException($"'{text}' is geen geldig IPv4 address prefix (verwacht bijvoorbeeld 10.0.0.0/16).");
+            : throw new FormatException($"'{text}' is not a valid IPv4 address prefix (expected e.g. 10.0.0.0/16).");
 
     /// <summary>
     /// Parses "a.b.c.d/nn". A bare address without prefix length is treated as /32.

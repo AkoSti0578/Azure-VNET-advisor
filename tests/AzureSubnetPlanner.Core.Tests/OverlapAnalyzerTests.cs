@@ -15,8 +15,8 @@ public class OverlapAnalyzerTests
             Vnet("a", "10.0.0.0/16"),
             Vnet("a", "10.0.0.0/16"),
             Vnet("b", "10.0.4.0/24"),
-            new ReservedRange(IPv4Network.Parse("10.0.8.0/24"), ReservationKind.OnPremises, "kantoor"),
-            new ReservedRange(IPv4Network.Parse("10.0.8.0/25"), ReservationKind.OnPremises, "kantoor 2"),
+            new ReservedRange(IPv4Network.Parse("10.0.8.0/24"), ReservationKind.OnPremises, "office"),
+            new ReservedRange(IPv4Network.Parse("10.0.8.0/25"), ReservationKind.OnPremises, "office 2"),
         };
 
         var pairs = OverlapAnalyzer.FindOverlaps(ranges);

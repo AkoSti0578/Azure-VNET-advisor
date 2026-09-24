@@ -31,7 +31,7 @@ public static class SubnetLayoutPlanner
             }
         }
 
-        throw new ArgumentOutOfRangeException(nameof(usableHosts), "Te veel hosts voor één IPv4-subnet.");
+        throw new ArgumentOutOfRangeException(nameof(usableHosts), "Too many hosts for a single IPv4 subnet.");
     }
 
     /// <summary>The smallest VNET prefix (largest prefix length) that fits all requested subnets.</summary>
@@ -45,12 +45,12 @@ public static class SubnetLayoutPlanner
 
         if (total == 0)
         {
-            throw new ArgumentException("Er zijn geen subnets opgegeven.", nameof(requests));
+            throw new ArgumentException("No subnets were specified.", nameof(requests));
         }
 
         if (total > 1UL << 32)
         {
-            throw new ArgumentException("De subnets zijn samen groter dan de volledige IPv4-adresruimte.", nameof(requests));
+            throw new ArgumentException("The subnets are together larger than the entire IPv4 address space.", nameof(requests));
         }
 
         var prefix = 32;
@@ -78,14 +78,14 @@ public static class SubnetLayoutPlanner
             if (request.PrefixLength < vnet.PrefixLength)
             {
                 throw new InvalidOperationException(
-                    $"Subnet '{request.Name}' (/{request.PrefixLength}) is groter dan het VNET {vnet}.");
+                    $"Subnet '{request.Name}' (/{request.PrefixLength}) is larger than the VNET {vnet}.");
             }
 
             var size = 1UL << (32 - request.PrefixLength);
             if (cursor + size - 1 > end)
             {
                 throw new InvalidOperationException(
-                    $"De subnets passen niet in {vnet}; minimaal /{RequiredVnetPrefix(requests)} is nodig.");
+                    $"The subnets do not fit in {vnet}; at least a /{RequiredVnetPrefix(requests)} is required.");
             }
 
             allocations.Add(new SubnetAllocation(request.Name, new IPv4Network((uint)cursor, request.PrefixLength)));
@@ -95,7 +95,7 @@ public static class SubnetLayoutPlanner
         if (cursor <= end)
         {
             allocations.AddRange(AddressSpacePlanner.ToCidrBlocks(cursor, end)
-                .Select(block => new SubnetAllocation("(vrij)", block, IsFree: true)));
+                .Select(block => new SubnetAllocation("(free)", block, IsFree: true)));
         }
 
         return allocations;

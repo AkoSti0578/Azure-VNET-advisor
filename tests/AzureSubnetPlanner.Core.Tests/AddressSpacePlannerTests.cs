@@ -34,7 +34,7 @@ public class AddressSpacePlannerTests
     {
         var planner = new AddressSpacePlanner(
         [
-            new ReservedRange(N("10.0.0.0/12"), ReservationKind.OnPremises, "kantoor"),
+            new ReservedRange(N("10.0.0.0/12"), ReservationKind.OnPremises, "office"),
         ]);
 
         var block = Assert.Single(planner.FindFreeBlocks([N("10.0.0.0/8")], 20, 1));

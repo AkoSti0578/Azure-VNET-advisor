@@ -8,11 +8,11 @@ public sealed record SuggestionRow(IPv4Network Network, IPv4Network Pool, bool I
 
     public string Range => Network.RangeText;
 
-    public string Addresses => Network.Size.ToString("N0", PrefixOption.Dutch);
+    public string Addresses => Network.Size.ToString("N0", PrefixOption.English);
 
     public string PoolText => Pool.ToString();
 
-    public string Remark => IsRecommended ? "Aanbevolen" : string.Empty;
+    public string Remark => IsRecommended ? "Recommended" : string.Empty;
 }
 
 public sealed record LayoutRow(SubnetAllocation Allocation)
@@ -25,7 +25,7 @@ public sealed record LayoutRow(SubnetAllocation Allocation)
 
     public string UsableRange => Allocation.IsFree ? string.Empty : Allocation.UsableRangeText;
 
-    public string Usable => Allocation.IsFree ? string.Empty : Allocation.AzureUsableAddresses.ToString("N0", PrefixOption.Dutch);
+    public string Usable => Allocation.IsFree ? string.Empty : Allocation.AzureUsableAddresses.ToString("N0", PrefixOption.English);
 
     public bool IsFree => Allocation.IsFree;
 }
@@ -35,15 +35,15 @@ public sealed record ReservedRow(ReservedRange Range)
     public string Kind => Range.Kind switch
     {
         ReservationKind.ExistingVnet => "Azure VNET",
-        ReservationKind.OnPremises => "Lokaal netwerk",
-        _ => "Azure gereserveerd",
+        ReservationKind.OnPremises => "Local network",
+        _ => "Azure reserved",
     };
 
     public string Prefix => Range.Network.ToString();
 
     public string AddressRange => Range.Network.RangeText;
 
-    public string Addresses => Range.Network.Size.ToString("N0", PrefixOption.Dutch);
+    public string Addresses => Range.Network.Size.ToString("N0", PrefixOption.English);
 
     public string VnetName => Range.Vnet?.VnetName ?? string.Empty;
 

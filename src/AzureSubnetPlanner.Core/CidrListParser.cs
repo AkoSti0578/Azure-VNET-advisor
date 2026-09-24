@@ -46,11 +46,11 @@ public static class CidrListParser
                 }
                 else if (token.Contains(':'))
                 {
-                    errors.Add($"Regel {i + 1}: IPv6 ('{token}') wordt niet ondersteund.");
+                    errors.Add($"Line {i + 1}: IPv6 ('{token}') is not supported.");
                 }
                 else
                 {
-                    errors.Add($"Regel {i + 1}: '{token}' is geen geldig CIDR-prefix (bijv. 192.168.0.0/16).");
+                    errors.Add($"Line {i + 1}: '{token}' is not a valid CIDR prefix (e.g. 192.168.0.0/16).");
                 }
             }
         }
