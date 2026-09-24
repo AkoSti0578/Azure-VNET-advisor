@@ -4,3 +4,7 @@ artifacts/
 .vs/
 *.user
 TestResults/
+
+# Real VNET exports may contain company data; only the sample files are tracked.
+*.csv
+!samples/*.csv
