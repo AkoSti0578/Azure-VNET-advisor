@@ -1,0 +1,18 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <OutputName>AzureSubnetPlanner</OutputName>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <Cultures>nl-NL</Cultures>
+    <!-- MSI versions must be numeric: major.minor.build (build max 65535). -->
+    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
+    <!-- Output of 'dotnet publish' of the WPF app (see build.ps1). -->
+    <AppPublishDir Condition="'$(AppPublishDir)' == ''">$(MSBuildThisFileDirectory)..\artifacts\publish\</AppPublishDir>
+    <DefineConstants>ProductVersion=$(ProductVersion);AppPublishDir=$(AppPublishDir);AssetsDir=$(MSBuildThisFileDirectory)..\src\AzureSubnetPlanner.App\Assets\</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>

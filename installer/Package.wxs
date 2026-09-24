@@ -1,0 +1,49 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <Package Name="Azure Subnet Planner"
+           Manufacturer="Azure Subnet Planner"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="F2D73951-75B6-49E4-A27C-986ACA7FA156"
+           Scope="perMachine"
+           Language="1043"
+           Codepage="1252">
+
+    <SummaryInformation Description="Azure Subnet Planner - adviseert vrije address prefixes voor nieuwe Azure VNETs" />
+
+    <MajorUpgrade DowngradeErrorMessage="Er is al een nieuwere versie van [ProductName] geïnstalleerd." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(var.AssetsDir)app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Azure Subnet Planner" />
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="Azure Subnet Planner" Level="1">
+      <Component Id="AppExecutable" Directory="INSTALLFOLDER">
+        <File Id="AzureSubnetPlannerExe" Source="$(var.AppPublishDir)AzureSubnetPlanner.exe" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut"
+                    Directory="ProgramMenuFolder"
+                    Name="Azure Subnet Planner"
+                    Description="Vrije address prefixes voor Azure VNETs bepalen"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Icon="AppIcon.ico"
+                    Advertise="yes" />
+          <Shortcut Id="DesktopShortcut"
+                    Directory="DesktopFolder"
+                    Name="Azure Subnet Planner"
+                    Description="Vrije address prefixes voor Azure VNETs bepalen"
+                    WorkingDirectory="INSTALLFOLDER"
+                    Icon="AppIcon.ico"
+                    Advertise="yes" />
+        </File>
+      </Component>
+    </Feature>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Package>
+</Wix>
