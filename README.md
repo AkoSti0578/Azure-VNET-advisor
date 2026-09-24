@@ -10,12 +10,10 @@ It also proposes a **subnet layout** inside the new VNET (including GatewaySubne
 
 The application does not connect to Azure or the internet; all data stays on your machine.
 
-> The user interface is in Dutch.
-
 ## How to use
 
-1. **Export existing VNETs** – open *Resource Graph Explorer* in the Azure Portal, run the query in [`kql/existing-vnets.kql`](kql/existing-vnets.kql) (also available via the *KQL-query kopiëren* button in the app) and choose *Download as CSV*.
-2. **Import the CSV** – click *CSV importeren...*. Comma, semicolon and tab separated files are supported; IPv6 prefixes are skipped.
+1. **Export existing VNETs** – open *Resource Graph Explorer* in the Azure Portal, run the query in [`kql/existing-vnets.kql`](kql/existing-vnets.kql) (also available via the *Copy KQL query* button in the app) and choose *Download as CSV*.
+2. **Import the CSV** – click *Import CSV...*. Comma, semicolon and tab separated files are supported; IPv6 prefixes are skipped.
 3. **Enter local networks** – one CIDR per line, text after `#` is a description:
    ```
    192.168.0.0/16  # Office
@@ -23,13 +21,13 @@ The application does not connect to Azure or the internet; all data stays on you
    ```
 4. **Search range** – the address space to search, in order of preference (default `10.0.0.0/8`). For each range the app shows how much space is still free.
 5. **New VNET** – pick a fixed size (e.g. /22) or let the size be calculated from the subnets you need (optionally with room for growth).
-6. Click **Adviseer address prefix**. You get the recommended prefix plus alternatives, each with a subnet layout that you can copy, export as CSV or copy as Azure CLI commands.
+6. Click **Recommend address prefix**. You get the recommended prefix plus alternatives, each with a subnet layout that you can copy, export as CSV or copy as Azure CLI commands.
 
 Additional tabs:
 
-- **Prefix controleren** – check a prefix of your own and see exactly which VNETs/networks it overlaps.
-- **Bezette adresruimte** – filterable overview of all occupied ranges.
-- **Meldingen** – import warnings and existing overlaps between VNETs and/or local networks.
+- **Check prefix** – check a prefix of your own and see exactly which VNETs/networks it overlaps.
+- **Occupied address space** – filterable overview of all occupied ranges.
+- **Warnings** – import warnings and existing overlaps between VNETs and/or local networks.
 
 Local networks, search ranges and the last used CSV file are saved in `%APPDATA%\AzureSubnetPlanner\settings.json`.
 

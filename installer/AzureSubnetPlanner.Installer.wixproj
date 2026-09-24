@@ -3,7 +3,7 @@
   <PropertyGroup>
     <OutputName>AzureSubnetPlanner</OutputName>
     <InstallerPlatform>x64</InstallerPlatform>
-    <Cultures>nl-NL</Cultures>
+    <Cultures>en-US</Cultures>
     <!-- MSI versions must be numeric: major.minor.build (build max 65535). -->
     <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
     <!-- Output of 'dotnet publish' of the WPF app (see build.ps1). -->

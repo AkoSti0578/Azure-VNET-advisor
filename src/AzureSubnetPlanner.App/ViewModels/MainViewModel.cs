@@ -33,13 +33,13 @@ public sealed class MainViewModel : ObservableObject
     private AddressSpacePlanner _planner = new(AzureReservedRanges.All);
     private IReadOnlyList<SubnetRequest> _adviceSubnets = [];
 
-    private string _csvStatus = "Nog geen CSV geladen.";
+    private string _csvStatus = "No CSV loaded yet.";
     private string _localNetworksText = string.Empty;
     private string _localNetworksError = string.Empty;
     private string _searchPoolsText = string.Empty;
     private string _poolsError = string.Empty;
     private string _poolInfo = string.Empty;
-    private string _vnetName = "vnet-nieuw";
+    private string _vnetName = "vnet-new";
     private bool _useSubnetSize = true;
     private int _selectedVnetPrefix = 22;
     private bool _addGrowthSpace;
@@ -47,14 +47,14 @@ public sealed class MainViewModel : ObservableObject
     private int _suggestionCount = 5;
     private SuggestionRow? _selectedSuggestion;
     private string? _recommendedPrefix;
-    private string _adviceText = "Vul links de gegevens in en klik op 'Adviseer address prefix'.";
+    private string _adviceText = "Fill in the details on the left and click 'Recommend address prefix'.";
     private bool _adviceIsError;
-    private string _layoutTitle = "Subnetindeling";
+    private string _layoutTitle = "Subnet layout";
     private string _checkPrefixText = string.Empty;
     private string _checkResultText = string.Empty;
     private string _checkState = string.Empty;
     private string _reservedFilter = string.Empty;
-    private string _statusMessage = "Gereed.";
+    private string _statusMessage = "Ready.";
     private int _selectedTabIndex;
 
     public MainViewModel()
@@ -64,12 +64,12 @@ public sealed class MainViewModel : ObservableObject
 
         ImportCsvCommand = new RelayCommand(ImportCsv);
         ClearCsvCommand = new RelayCommand(ClearCsv, () => _vnets.Count > 0 || _csvPath is not null);
-        CopyKqlCommand = new RelayCommand(() => CopyToClipboard(KqlQueries.ExistingVnets, "KQL-query gekopieerd naar het klembord."));
+        CopyKqlCommand = new RelayCommand(() => CopyToClipboard(KqlQueries.ExistingVnets, "KQL query copied to the clipboard."));
         AddSubnetCommand = new RelayCommand(AddSubnet);
         RemoveSubnetCommand = new RelayCommand(RemoveSubnet, () => SelectedSubnet is not null);
         AddPresetCommand = new RelayCommand(AddPreset);
         AdviseCommand = new RelayCommand(Advise);
-        CopyCommand = new RelayCommand(p => CopyToClipboard(p as string, $"'{p}' gekopieerd naar het klembord."), p => !string.IsNullOrEmpty(p as string));
+        CopyCommand = new RelayCommand(p => CopyToClipboard(p as string, $"'{p}' copied to the clipboard."), p => !string.IsNullOrEmpty(p as string));
         CopyLayoutCommand = new RelayCommand(CopyLayout, () => SelectedSuggestion is not null);
         CopyCliCommand = new RelayCommand(CopyAzureCli, () => SelectedSuggestion is not null);
         ExportLayoutCommand = new RelayCommand(ExportLayout, () => SelectedSuggestion is not null);
@@ -77,7 +77,7 @@ public sealed class MainViewModel : ObservableObject
         CheckSuggestionCommand = new RelayCommand(CheckSelectedSuggestion, () => SelectedSuggestion is not null);
 
         var settings = _settingsStore.Load();
-        _localNetworksText = settings.LocalNetworksText ?? "# Eén CIDR per regel, tekst na # is een omschrijving\n# 192.168.0.0/16 # Kantoor\n";
+        _localNetworksText = settings.LocalNetworksText ?? "# One CIDR per line, text after # is a description\n# 192.168.0.0/16 # Office\n";
         _searchPoolsText = settings.SearchPoolsText ?? "10.0.0.0/8\n";
         _vnetName = string.IsNullOrWhiteSpace(settings.VnetName) ? _vnetName : settings.VnetName;
 
@@ -94,7 +94,7 @@ public sealed class MainViewModel : ObservableObject
             Rebuild();
         }
 
-        AdviceText = "Vul links de gegevens in en klik op 'Adviseer address prefix'.";
+        AdviceText = "Fill in the details on the left and click 'Recommend address prefix'.";
     }
 
     public ICommand ImportCsvCommand { get; }
@@ -339,8 +339,8 @@ public sealed class MainViewModel : ObservableObject
     {
         var dialog = new OpenFileDialog
         {
-            Title = "CSV met bestaande VNETs importeren",
-            Filter = "CSV-bestanden (*.csv)|*.csv|Alle bestanden (*.*)|*.*",
+            Title = "Import CSV with existing VNETs",
+            Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
         };
         if (_csvPath is not null && Directory.Exists(Path.GetDirectoryName(_csvPath)))
         {
@@ -366,15 +366,15 @@ public sealed class MainViewModel : ObservableObject
                 .Select(v => (v.SubscriptionId.ToUpperInvariant(), v.ResourceGroup.ToUpperInvariant(), v.VnetName.ToUpperInvariant()))
                 .Distinct()
                 .Count();
-            var status = $"{Path.GetFileName(path)}: {vnetCount} VNET(s) met {_vnets.Count} address prefix(es) geladen.";
+            var status = $"{Path.GetFileName(path)}: {vnetCount} VNET(s) with {_vnets.Count} address prefix(es) loaded.";
             if (result.Ipv6PrefixesSkipped > 0)
             {
-                status += $" {result.Ipv6PrefixesSkipped} IPv6-prefix(es) overgeslagen.";
+                status += $" {result.Ipv6PrefixesSkipped} IPv6 prefix(es) skipped.";
             }
 
             if (result.Warnings.Count > 0)
             {
-                status += $" {result.Warnings.Count} melding(en), zie tabblad Meldingen.";
+                status += $" {result.Warnings.Count} warning(s), see the Warnings tab.";
             }
 
             CsvStatus = status;
@@ -385,11 +385,11 @@ public sealed class MainViewModel : ObservableObject
         {
             if (showErrors)
             {
-                MessageBox.Show($"Het CSV-bestand kon niet worden gelezen:\n\n{ex.Message}", "CSV importeren",
+                MessageBox.Show($"The CSV file could not be read:\n\n{ex.Message}", "Import CSV",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
 
-            StatusMessage = $"CSV niet geladen: {ex.Message}";
+            StatusMessage = $"CSV not loaded: {ex.Message}";
             Rebuild();
         }
     }
@@ -399,8 +399,8 @@ public sealed class MainViewModel : ObservableObject
         _vnets = [];
         _csvWarnings = [];
         _csvPath = null;
-        CsvStatus = "Nog geen CSV geladen.";
-        StatusMessage = "Bestaande VNETs gewist.";
+        CsvStatus = "No CSV loaded yet.";
+        StatusMessage = "Existing VNETs cleared.";
         Rebuild();
     }
 
@@ -418,7 +418,7 @@ public sealed class MainViewModel : ObservableObject
         var errors = result.Errors.ToList();
         if (_pools.Count == 0 && errors.Count == 0)
         {
-            errors.Add("Vul minimaal één zoekbereik in, bijvoorbeeld 10.0.0.0/8.");
+            errors.Add("Enter at least one search range, for example 10.0.0.0/8.");
         }
 
         PoolsError = string.Join(Environment.NewLine, errors);
@@ -432,7 +432,7 @@ public sealed class MainViewModel : ObservableObject
         reserved.AddRange(_localNetworks.Select(e => new ReservedRange(
             e.Network,
             ReservationKind.OnPremises,
-            e.Comment is null ? "Lokaal netwerk" : $"Lokaal: {e.Comment}")));
+            e.Comment is null ? "Local network" : $"Local: {e.Comment}")));
         reserved.AddRange(AzureReservedRanges.All);
         _planner = new AddressSpacePlanner(reserved);
 
@@ -444,7 +444,7 @@ public sealed class MainViewModel : ObservableObject
 
         UpdatePoolInfo();
         UpdateWarnings();
-        ClearAdvice("De invoer is gewijzigd. Klik op 'Adviseer address prefix' voor een nieuw advies.");
+        ClearAdvice("The input has changed. Click 'Recommend address prefix' for a new recommendation.");
     }
 
     private void UpdatePoolInfo()
@@ -452,8 +452,8 @@ public sealed class MainViewModel : ObservableObject
         var lines = _pools.Select(pool =>
         {
             var free = _planner.GetFreeSpace(pool);
-            var largest = free.LargestFreePrefix is { } p ? $"grootste vrije blok /{p}" : "geen vrije ruimte";
-            return $"{pool}: {free.FreePercentage.ToString("0.#", PrefixOption.Dutch)}% vrij, {largest}";
+            var largest = free.LargestFreePrefix is { } p ? $"largest free block /{p}" : "no free space";
+            return $"{pool}: {free.FreePercentage.ToString("0.#", PrefixOption.English)}% free, {largest}";
         });
         PoolInfo = string.Join(Environment.NewLine, lines);
     }
@@ -468,7 +468,7 @@ public sealed class MainViewModel : ObservableObject
 
         foreach (var pool in _pools.Where(pool => !PrivateRanges.Any(r => r.Contains(pool))))
         {
-            Warnings.Add($"Zoekbereik {pool} valt (deels) buiten de privé-adresruimte (RFC 1918 / 100.64.0.0/10).");
+            Warnings.Add($"Search range {pool} is (partly) outside the private address space (RFC 1918 / 100.64.0.0/10).");
         }
 
         var overlaps = OverlapAnalyzer.FindOverlaps(_planner.Reserved);
@@ -479,7 +479,7 @@ public sealed class MainViewModel : ObservableObject
 
         if (overlaps.Count > MaxOverlapWarnings)
         {
-            Warnings.Add($"... en nog {overlaps.Count - MaxOverlapWarnings} overlap(pen).");
+            Warnings.Add($"... and {overlaps.Count - MaxOverlapWarnings} more overlap(s).");
         }
     }
 
@@ -512,7 +512,7 @@ public sealed class MainViewModel : ObservableObject
 
         if (Subnets.Any(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)))
         {
-            StatusMessage = $"{name} staat al in de lijst.";
+            StatusMessage = $"{name} is already in the list.";
             return;
         }
 
@@ -528,18 +528,18 @@ public sealed class MainViewModel : ObservableObject
 
         if (!string.IsNullOrEmpty(LocalNetworksError))
         {
-            ShowAdviceError("Corrigeer eerst de fouten bij 'Lokale netwerken'.");
+            ShowAdviceError("First fix the errors in 'Local networks'.");
             return;
         }
 
         if (!string.IsNullOrEmpty(PoolsError))
         {
-            ShowAdviceError("Corrigeer eerst de fouten bij 'Zoekbereik'.");
+            ShowAdviceError("First fix the errors in 'Search range'.");
             return;
         }
 
         var requests = Subnets
-            .Select(s => new SubnetRequest(string.IsNullOrWhiteSpace(s.Name) ? "(naamloos)" : s.Name.Trim(), s.PrefixLength))
+            .Select(s => new SubnetRequest(string.IsNullOrWhiteSpace(s.Name) ? "(unnamed)" : s.Name.Trim(), s.PrefixLength))
             .ToList();
 
         int prefix;
@@ -547,7 +547,7 @@ public sealed class MainViewModel : ObservableObject
         {
             if (requests.Count == 0)
             {
-                ShowAdviceError("Voeg minimaal één subnet toe, of kies een vaste VNET-grootte.");
+                ShowAdviceError("Add at least one subnet, or choose a fixed VNET size.");
                 return;
             }
 
@@ -565,7 +565,7 @@ public sealed class MainViewModel : ObservableObject
                 var required = SubnetLayoutPlanner.RequiredVnetPrefix(requests);
                 if (required < prefix)
                 {
-                    ShowAdviceError($"De opgegeven subnets passen niet in een /{prefix}; daarvoor is minimaal een /{required} nodig.");
+                    ShowAdviceError($"The specified subnets do not fit in a /{prefix}; at least a /{required} is required.");
                     return;
                 }
             }
@@ -574,8 +574,8 @@ public sealed class MainViewModel : ObservableObject
         var blocks = _planner.FindFreeBlocks(_pools, prefix, SuggestionCount);
         if (blocks.Count == 0)
         {
-            ShowAdviceError($"Geen vrij /{prefix}-blok gevonden in het zoekbereik ({string.Join(", ", _pools)}). " +
-                            "Vergroot het zoekbereik of kies een kleiner VNET.");
+            ShowAdviceError($"No free /{prefix} block found in the search range ({string.Join(", ", _pools)}). " +
+                            "Enlarge the search range or choose a smaller VNET.");
             return;
         }
 
@@ -590,12 +590,12 @@ public sealed class MainViewModel : ObservableObject
         var localCount = _localNetworks.Count;
         RecommendedPrefix = blocks[0].ToString();
         AdviceText =
-            $"Vrij /{prefix}-blok ({blocks[0].Size.ToString("N0", PrefixOption.Dutch)} adressen, {blocks[0].RangeText}). " +
-            $"Gecontroleerd tegen {vnetPrefixCount} bestaande VNET-prefix(es), {localCount} lokale netwerk(en) " +
-            "en de door Azure gereserveerde ranges." +
-            (blocks.Count > 1 ? $" Hieronder staan ook {blocks.Count - 1} alternatieve prefix(es)." : string.Empty);
+            $"Free /{prefix} block ({blocks[0].Size.ToString("N0", PrefixOption.English)} addresses, {blocks[0].RangeText}). " +
+            $"Checked against {vnetPrefixCount} existing VNET prefix(es), {localCount} local network(s) " +
+            "and the ranges reserved by Azure." +
+            (blocks.Count > 1 ? $" {blocks.Count - 1} alternative prefix(es) are listed below." : string.Empty);
         SelectedSuggestion = Suggestions[0];
-        StatusMessage = $"Advies: gebruik {RecommendedPrefix} als address prefix voor {VnetName}.";
+        StatusMessage = $"Recommendation: use {RecommendedPrefix} as the address prefix for {VnetName}.";
     }
 
     private void ShowAdviceError(string message)
@@ -622,11 +622,11 @@ public sealed class MainViewModel : ObservableObject
         LayoutRows.Clear();
         if (SelectedSuggestion is null)
         {
-            LayoutTitle = "Subnetindeling";
+            LayoutTitle = "Subnet layout";
             return;
         }
 
-        LayoutTitle = $"Subnetindeling voor {SelectedSuggestion.Prefix}";
+        LayoutTitle = $"Subnet layout for {SelectedSuggestion.Prefix}";
         try
         {
             foreach (var allocation in SubnetLayoutPlanner.Layout(SelectedSuggestion.Network, _adviceSubnets))
@@ -647,14 +647,14 @@ public sealed class MainViewModel : ObservableObject
         if (!input.Contains('/') || !IPv4Network.TryParse(input, out var network))
         {
             CheckState = "invalid";
-            CheckResultText = "Voer een geldig IPv4 address prefix in, bijvoorbeeld 10.20.0.0/16.";
+            CheckResultText = "Enter a valid IPv4 address prefix, for example 10.20.0.0/16.";
             return;
         }
 
         var text = new StringBuilder();
         if (!string.Equals(network.ToString(), input, StringComparison.Ordinal))
         {
-            text.Append($"Let op: '{input}' is geen netwerkadres; Azure verwacht {network}. ");
+            text.Append($"Note: '{input}' is not a network address; Azure expects {network}. ");
         }
 
         var conflicts = _planner.FindConflicts(network);
@@ -666,20 +666,20 @@ public sealed class MainViewModel : ObservableObject
         if (conflicts.Count == 0)
         {
             CheckState = "free";
-            text.Append($"{network} ({network.RangeText}) is vrij: geen overlap met bestaande VNETs of lokale netwerken.");
+            text.Append($"{network} ({network.RangeText}) is free: no overlap with existing VNETs or local networks.");
             if (!_pools.Any(p => p.Contains(network)))
             {
-                text.Append(" Het prefix valt wel buiten het opgegeven zoekbereik.");
+                text.Append(" Note that the prefix is outside the specified search range.");
             }
         }
         else
         {
             CheckState = "conflict";
-            text.Append($"{network} ({network.RangeText}) overlapt met {conflicts.Count} netwerk(en):");
+            text.Append($"{network} ({network.RangeText}) overlaps {conflicts.Count} network(s):");
         }
 
         CheckResultText = text.ToString();
-        StatusMessage = $"Controle {network}: {(conflicts.Count == 0 ? "vrij" : $"{conflicts.Count} conflict(en)")}.";
+        StatusMessage = $"Check {network}: {(conflicts.Count == 0 ? "free" : $"{conflicts.Count} conflict(s)")}.";
     }
 
     private void CheckSelectedSuggestion()
@@ -708,7 +708,7 @@ public sealed class MainViewModel : ObservableObject
             text.AppendLine($"{row.Name}\t{row.Prefix}\t{row.Range}\t{row.Usable}");
         }
 
-        CopyToClipboard(text.ToString(), "Subnetindeling gekopieerd (tab-gescheiden, te plakken in Excel).");
+        CopyToClipboard(text.ToString(), "Subnet layout copied (tab separated, ready to paste into Excel).");
     }
 
     private void CopyAzureCli()
@@ -718,16 +718,16 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var vnet = string.IsNullOrWhiteSpace(VnetName) ? "vnet-nieuw" : VnetName.Trim();
+        var vnet = string.IsNullOrWhiteSpace(VnetName) ? "vnet-new" : VnetName.Trim();
         var text = new StringBuilder();
-        text.AppendLine("# Vul <resource-group> en <location> in voordat je de commando's uitvoert.");
+        text.AppendLine("# Fill in <resource-group> and <location> before running the commands.");
         text.AppendLine($"az network vnet create --resource-group <resource-group> --location <location> --name {vnet} --address-prefixes {SelectedSuggestion.Prefix}");
         foreach (var row in LayoutRows.Where(r => !r.IsFree))
         {
             text.AppendLine($"az network vnet subnet create --resource-group <resource-group> --vnet-name {vnet} --name {row.Name} --address-prefixes {row.Prefix}");
         }
 
-        CopyToClipboard(text.ToString(), "Azure CLI-commando's gekopieerd naar het klembord.");
+        CopyToClipboard(text.ToString(), "Azure CLI commands copied to the clipboard.");
     }
 
     private void ExportLayout()
@@ -737,11 +737,11 @@ public sealed class MainViewModel : ObservableObject
             return;
         }
 
-        var vnet = string.IsNullOrWhiteSpace(VnetName) ? "vnet-nieuw" : VnetName.Trim();
+        var vnet = string.IsNullOrWhiteSpace(VnetName) ? "vnet-new" : VnetName.Trim();
         var dialog = new SaveFileDialog
         {
-            Title = "Subnetindeling exporteren",
-            Filter = "CSV-bestanden (*.csv)|*.csv",
+            Title = "Export subnet layout",
+            Filter = "CSV files (*.csv)|*.csv",
             FileName = $"{vnet}-{SelectedSuggestion.Prefix.Replace('/', '_')}.csv",
         };
         if (dialog.ShowDialog() != true)
@@ -760,11 +760,11 @@ public sealed class MainViewModel : ObservableObject
         try
         {
             File.WriteAllText(dialog.FileName, csv.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
-            StatusMessage = $"Subnetindeling opgeslagen in {dialog.FileName}.";
+            StatusMessage = $"Subnet layout saved to {dialog.FileName}.";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            MessageBox.Show($"Opslaan mislukt:\n\n{ex.Message}", "Exporteren", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show($"Saving failed:\n\n{ex.Message}", "Export", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -782,7 +782,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (System.Runtime.InteropServices.ExternalException)
         {
-            StatusMessage = "Het klembord is bezet door een ander programma; probeer het opnieuw.";
+            StatusMessage = "The clipboard is in use by another program; please try again.";
         }
     }
 }

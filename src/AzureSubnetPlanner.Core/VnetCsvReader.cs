@@ -44,7 +44,7 @@ public static class VnetCsvReader
         var rows = ParseRows(content, DetectDelimiter(content));
         if (rows.Count == 0)
         {
-            throw new InvalidDataException("Het CSV-bestand is leeg.");
+            throw new InvalidDataException("The CSV file is empty.");
         }
 
         var header = rows[0].Select(NormalizeHeader).ToList();
@@ -52,7 +52,7 @@ public static class VnetCsvReader
         if (prefixIndex < 0)
         {
             throw new InvalidDataException(
-                "Kolom 'addressPrefix' niet gevonden in het CSV-bestand. Gebruik de export van de meegeleverde KQL-query.");
+                "Column 'addressPrefix' not found in the CSV file. Use the export of the included KQL query.");
         }
 
         var vnetIndex = FindColumn(header, VnetColumns);
@@ -76,7 +76,7 @@ public static class VnetCsvReader
             var tokens = rawPrefix.Split(PrefixSeparators, StringSplitOptions.RemoveEmptyEntries);
             if (tokens.Length == 0)
             {
-                result.Warnings.Add($"Regel {lineNumber}: VNET '{vnetName}' heeft geen address prefix en is overgeslagen.");
+                result.Warnings.Add($"Line {lineNumber}: VNET '{vnetName}' has no address prefix and was skipped.");
                 continue;
             }
 
@@ -90,7 +90,7 @@ public static class VnetCsvReader
 
                 if (!IPv4Network.TryParse(token, out var prefix) || !token.Contains('/'))
                 {
-                    result.Warnings.Add($"Regel {lineNumber}: '{token}' van VNET '{vnetName}' is geen geldig address prefix en is overgeslagen.");
+                    result.Warnings.Add($"Line {lineNumber}: '{token}' of VNET '{vnetName}' is not a valid address prefix and was skipped.");
                     continue;
                 }
 

@@ -35,7 +35,7 @@ public class SubnetLayoutPlannerTests
             [new SubnetRequest("GatewaySubnet", 27), new SubnetRequest("app", 24), new SubnetRequest("AzureBastionSubnet", 26)]);
 
         Assert.Equal(
-            ["app 10.10.0.0/24", "AzureBastionSubnet 10.10.1.0/26", "GatewaySubnet 10.10.1.64/27", "(vrij) 10.10.1.96/27", "(vrij) 10.10.1.128/25"],
+            ["app 10.10.0.0/24", "AzureBastionSubnet 10.10.1.0/26", "GatewaySubnet 10.10.1.64/27", "(free) 10.10.1.96/27", "(free) 10.10.1.128/25"],
             layout.Select(a => $"{a.Name} {a.Network}"));
         Assert.Equal(251, layout[0].AzureUsableAddresses);
         Assert.Equal("10.10.0.4 - 10.10.0.254", layout[0].UsableRangeText);

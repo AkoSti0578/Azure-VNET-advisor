@@ -6,12 +6,12 @@
            Version="$(var.ProductVersion)"
            UpgradeCode="F2D73951-75B6-49E4-A27C-986ACA7FA156"
            Scope="perMachine"
-           Language="1043"
+           Language="1033"
            Codepage="1252">
 
-    <SummaryInformation Description="Azure Subnet Planner - adviseert vrije address prefixes voor nieuwe Azure VNETs" />
+    <SummaryInformation Description="Azure Subnet Planner - recommends free address prefixes for new Azure VNETs" />
 
-    <MajorUpgrade DowngradeErrorMessage="Er is al een nieuwere versie van [ProductName] geïnstalleerd." />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
     <Icon Id="AppIcon.ico" SourceFile="$(var.AssetsDir)app.ico" />
@@ -27,14 +27,14 @@
           <Shortcut Id="StartMenuShortcut"
                     Directory="ProgramMenuFolder"
                     Name="Azure Subnet Planner"
-                    Description="Vrije address prefixes voor Azure VNETs bepalen"
+                    Description="Find free address prefixes for Azure VNETs"
                     WorkingDirectory="INSTALLFOLDER"
                     Icon="AppIcon.ico"
                     Advertise="yes" />
           <Shortcut Id="DesktopShortcut"
                     Directory="DesktopFolder"
                     Name="Azure Subnet Planner"
-                    Description="Vrije address prefixes voor Azure VNETs bepalen"
+                    Description="Find free address prefixes for Azure VNETs"
                     WorkingDirectory="INSTALLFOLDER"
                     Icon="AppIcon.ico"
                     Advertise="yes" />
