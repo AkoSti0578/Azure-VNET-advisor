@@ -37,6 +37,10 @@ Local networks, search ranges and the last used CSV file are saved in `%APPDATA%
 
 The workflow [`.github/workflows/build-msi.yml`](.github/workflows/build-msi.yml) runs on every push on `windows-latest`, runs the tests and publishes the MSI as a build artifact (*Actions → Build MSI → Artifacts*). Push a tag such as `v1.2.0` to create a GitHub Release containing the MSI.
 
+### Code signing
+
+The MSI and the application can be signed with Azure Artifact Signing or your own code signing certificate. The workflow signs automatically once signing is configured; see [docs/code-signing.md](docs/code-signing.md) for the setup.
+
 ### Locally (Windows)
 
 Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0). WiX Toolset is restored automatically from NuGet.
@@ -44,6 +48,8 @@ Requires the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0). WiX
 ```powershell
 ./build.ps1 -Version 1.0.0
 ```
+
+Add `-Sign ArtifactSigning` or `-Sign Pfx` for a signed build.
 
 Output: `artifacts\msi\AzureSubnetPlanner.msi`. The app is published self-contained, so no .NET runtime is needed on the target machine. The MSI installs per machine into `C:\Program Files\Azure Subnet Planner` with shortcuts in the Start menu and on the desktop; a newer version automatically replaces the old one.
 

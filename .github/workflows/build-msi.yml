@@ -9,10 +9,18 @@ on:
 
 permissions:
   contents: write
+  id-token: write # GitHub OIDC login to Azure for Artifact Signing
 
 jobs:
   build:
     runs-on: windows-latest
+    # One federated credential (entity type "Environment", name "signing") covers every branch and tag.
+    environment: signing
+    env:
+      # Artifact Signing settings are not secret: repository variables (Settings → Secrets and variables → Actions → Variables).
+      ARTIFACT_SIGNING_ENDPOINT: ${{ vars.ARTIFACT_SIGNING_ENDPOINT }}
+      ARTIFACT_SIGNING_ACCOUNT: ${{ vars.ARTIFACT_SIGNING_ACCOUNT }}
+      ARTIFACT_SIGNING_PROFILE: ${{ vars.ARTIFACT_SIGNING_PROFILE }}
     steps:
       - uses: actions/checkout@v5
 
@@ -30,9 +38,48 @@ jobs:
           }
           "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Test, publish and build MSI
+      # Artifact Signing is used when its variables and AZURE_CLIENT_ID are configured, otherwise a
+      # PFX certificate when SIGNING_PFX_BASE64 is set, otherwise the build is unsigned.
+      # Pull requests are never signed.
+      - name: Choose signing method
+        id: signing
         shell: pwsh
-        run: ./build.ps1 -Version $env:VERSION
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          PFX_BASE64: ${{ secrets.SIGNING_PFX_BASE64 }}
+        run: |
+          $method = 'None'
+          if ('${{ github.event_name }}' -ne 'pull_request') {
+            if ($env:ARTIFACT_SIGNING_ACCOUNT -and $env:AZURE_CLIENT_ID) {
+              $method = 'ArtifactSigning'
+            } elseif ($env:PFX_BASE64) {
+              $path = Join-Path $env:RUNNER_TEMP 'signing.pfx'
+              [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:PFX_BASE64))
+              "SIGNING_PFX_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+              $method = 'Pfx'
+            }
+          }
+          Write-Host "Signing method: $method"
+          "method=$method" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Azure login (Artifact Signing)
+        if: steps.signing.outputs.method == 'ArtifactSigning'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Test, publish, sign and build MSI
+        shell: pwsh
+        env:
+          SIGNING_PFX_PASSWORD: ${{ secrets.SIGNING_PFX_PASSWORD }}
+        run: ./build.ps1 -Version $env:VERSION -Sign ${{ steps.signing.outputs.method }}
+
+      - name: Remove certificate file
+        if: always() && steps.signing.outputs.method == 'Pfx'
+        shell: pwsh
+        run: Remove-Item -Force -ErrorAction SilentlyContinue $env:SIGNING_PFX_PATH
 
       - name: Upload MSI
         uses: actions/upload-artifact@v4
