@@ -16,7 +16,6 @@
 
     <Icon Id="AppIcon.ico" SourceFile="$(var.AssetsDir)app.ico" />
     <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
-    <Property Id="ARPNOMODIFY" Value="1" />
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="Azure Subnet Planner" />
