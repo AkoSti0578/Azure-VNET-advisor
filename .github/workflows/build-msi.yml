@@ -1,0 +1,48 @@
+name: Build MSI
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Determine version
+        shell: pwsh
+        run: |
+          if ('${{ github.ref_type }}' -eq 'tag') {
+            $version = '${{ github.ref_name }}'.TrimStart('v')
+          } else {
+            $version = '1.0.${{ github.run_number }}'
+          }
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Test, publish and build MSI
+        shell: pwsh
+        run: ./build.ps1 -Version $env:VERSION
+
+      - name: Upload MSI
+        uses: actions/upload-artifact@v4
+        with:
+          name: AzureSubnetPlanner-${{ env.VERSION }}
+          path: artifacts/msi/*.msi
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/msi/*.msi

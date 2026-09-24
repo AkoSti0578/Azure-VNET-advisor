@@ -1,0 +1,8 @@
+"subscriptionName","subscriptionId","resourceGroup","vnetName","location","addressPrefix"
+"sub-connectivity","00000000-0000-0000-0000-000000000001","rg-hub-network","vnet-hub-weu","westeurope","10.0.0.0/22"
+"sub-landingzone-prod","00000000-0000-0000-0000-000000000002","rg-app1-network","vnet-app1-prod-weu","westeurope","10.1.0.0/24"
+"sub-landingzone-prod","00000000-0000-0000-0000-000000000002","rg-app2-network","vnet-app2-prod-weu","westeurope","10.1.4.0/22"
+"sub-landingzone-prod","00000000-0000-0000-0000-000000000002","rg-app2-network","vnet-app2-prod-weu","westeurope","10.1.8.0/24"
+"sub-landingzone-test","00000000-0000-0000-0000-000000000003","rg-app1-network","vnet-app1-test-weu","westeurope","10.2.0.0/16"
+"sub-landingzone-test","00000000-0000-0000-0000-000000000003","rg-dualstack","vnet-dualstack-neu","northeurope","10.3.0.0/24"
+"sub-landingzone-test","00000000-0000-0000-0000-000000000003","rg-dualstack","vnet-dualstack-neu","northeurope","fd00:db8:1::/48"

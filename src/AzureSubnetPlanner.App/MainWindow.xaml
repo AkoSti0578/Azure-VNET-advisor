@@ -1,0 +1,319 @@
+<Window x:Class="AzureSubnetPlanner.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:AzureSubnetPlanner.App.ViewModels"
+        Title="Azure Subnet Planner"
+        Icon="Assets/app.ico"
+        Width="1360" Height="900" MinWidth="1000" MinHeight="650"
+        WindowStartupLocation="CenterScreen"
+        Closing="OnClosing">
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <TextBlock Text="{Binding StatusMessage}" TextTrimming="CharacterEllipsis" />
+            </StatusBarItem>
+        </StatusBar>
+
+        <Grid Margin="10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="450" MinWidth="360" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" MinWidth="400" />
+            </Grid.ColumnDefinitions>
+
+            <!-- ============ Invoer ============ -->
+            <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Margin="0,0,6,0">
+
+                    <GroupBox Header="1. Bestaande Azure VNETs (CSV)">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HintText}"
+                                       Text="Voer de KQL-query uit in Azure Resource Graph Explorer, exporteer het resultaat als CSV en importeer het bestand hier." />
+                            <WrapPanel Margin="0,4,0,4">
+                                <Button Content="CSV importeren..." Command="{Binding ImportCsvCommand}" Margin="0,0,6,4" />
+                                <Button Content="Wissen" Command="{Binding ClearCsvCommand}" Margin="0,0,6,4" />
+                                <Button Content="KQL-query kopiëren" Command="{Binding CopyKqlCommand}" Margin="0,0,6,4" />
+                            </WrapPanel>
+                            <TextBlock Text="{Binding CsvStatus}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="2. Lokale / on-premises netwerken">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HintText}"
+                                       Text="Netwerken die niet mogen overlappen met het nieuwe VNET (kantoor, datacenter, VPN). Eén CIDR per regel; tekst na # is een omschrijving." />
+                            <TextBox Style="{StaticResource MultiLineInput}" Height="110"
+                                     Text="{Binding LocalNetworksText}" />
+                            <TextBlock Style="{StaticResource ErrorText}" Text="{Binding LocalNetworksError}">
+                                <TextBlock.Visibility>
+                                    <Binding Path="LocalNetworksError" Converter="{StaticResource EmptyToCollapsed}" />
+                                </TextBlock.Visibility>
+                            </TextBlock>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="3. Zoekbereik voor nieuwe VNETs">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource HintText}"
+                                       Text="De adresruimte waarin gezocht wordt, in volgorde van voorkeur. Bijvoorbeeld 10.0.0.0/8, 172.16.0.0/12 of een eigen Azure-supernet zoals 10.100.0.0/14." />
+                            <TextBox Style="{StaticResource MultiLineInput}" Height="70"
+                                     Text="{Binding SearchPoolsText}" />
+                            <TextBlock Style="{StaticResource ErrorText}" Text="{Binding PoolsError}"
+                                       Visibility="{Binding PoolsError, Converter={StaticResource EmptyToCollapsed}}" />
+                            <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,0" Text="{Binding PoolInfo}" />
+                        </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="4. Nieuw VNET">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Naam VNET:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <TextBox Grid.Column="1" Text="{Binding VnetName, UpdateSourceTrigger=PropertyChanged}" Padding="2" />
+                            </Grid>
+
+                            <RadioButton GroupName="Size" Margin="0,0,0,4"
+                                         Content="Grootte berekenen op basis van de subnets"
+                                         IsChecked="{Binding UseSubnetSize}" />
+                            <CheckBox Margin="20,0,0,6"
+                                      Content="Groeiruimte reserveren (VNET 2x zo groot)"
+                                      IsChecked="{Binding AddGrowthSpace}"
+                                      IsEnabled="{Binding UseSubnetSize}" />
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <RadioButton GroupName="Size" VerticalAlignment="Center"
+                                             Content="Vaste grootte:"
+                                             IsChecked="{Binding UseFixedSize}" />
+                                <ComboBox Width="190" Margin="8,0,0,0"
+                                          ItemsSource="{Binding VnetPrefixOptions}"
+                                          DisplayMemberPath="Label"
+                                          SelectedValuePath="PrefixLength"
+                                          SelectedValue="{Binding SelectedVnetPrefix}"
+                                          IsEnabled="{Binding UseFixedSize}" />
+                            </StackPanel>
+
+                            <TextBlock Text="Subnets in het nieuwe VNET" FontWeight="SemiBold" Margin="0,4,0,2" />
+                            <TextBlock Style="{StaticResource HintText}"
+                                       Text="Azure reserveert 5 adressen per subnet. Het kleinste toegestane subnet is /29." />
+                            <DataGrid Height="170"
+                                      ItemsSource="{Binding Subnets}"
+                                      SelectedItem="{Binding SelectedSubnet}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Naam" Width="*"
+                                                        Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                                    <DataGridTemplateColumn Header="Grootte" Width="190">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{x:Static vm:PrefixOption.SubnetOptions}"
+                                                          DisplayMemberPath="Label"
+                                                          SelectedValuePath="PrefixLength"
+                                                          SelectedValue="{Binding PrefixLength, UpdateSourceTrigger=PropertyChanged}"
+                                                          BorderThickness="0" />
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <WrapPanel Margin="0,6,0,0">
+                                <Button Content="Subnet toevoegen" Command="{Binding AddSubnetCommand}" Margin="0,0,6,4" />
+                                <Button Content="Verwijderen" Command="{Binding RemoveSubnetCommand}" Margin="0,0,6,4" />
+                            </WrapPanel>
+                            <TextBlock Style="{StaticResource HintText}" Margin="0,4,0,2" Text="Azure-subnets met een vaste naam toevoegen:" />
+                            <WrapPanel>
+                                <Button Content="GatewaySubnet /27" Command="{Binding AddPresetCommand}" CommandParameter="GatewaySubnet|27" Margin="0,0,6,4" />
+                                <Button Content="AzureBastionSubnet /26" Command="{Binding AddPresetCommand}" CommandParameter="AzureBastionSubnet|26" Margin="0,0,6,4" />
+                                <Button Content="AzureFirewallSubnet /26" Command="{Binding AddPresetCommand}" CommandParameter="AzureFirewallSubnet|26" Margin="0,0,6,4" />
+                                <Button Content="AzureFirewallManagementSubnet /26" Command="{Binding AddPresetCommand}" CommandParameter="AzureFirewallManagementSubnet|26" Margin="0,0,6,4" />
+                                <Button Content="RouteServerSubnet /27" Command="{Binding AddPresetCommand}" CommandParameter="RouteServerSubnet|27" Margin="0,0,6,4" />
+                            </WrapPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <TextBlock Text="Aantal voorstellen:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ComboBox Width="70" ItemsSource="{Binding SuggestionCountOptions}" SelectedItem="{Binding SuggestionCount}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </GroupBox>
+
+                    <Button Style="{StaticResource AccentButton}" Content="Adviseer address prefix"
+                            Command="{Binding AdviseCommand}" HorizontalAlignment="Stretch" Margin="0,0,0,10" />
+                </StackPanel>
+            </ScrollViewer>
+
+            <GridSplitter Grid.Column="1" Width="8" HorizontalAlignment="Stretch" Background="Transparent" />
+
+            <!-- ============ Resultaten ============ -->
+            <TabControl Grid.Column="2" SelectedIndex="{Binding SelectedTabIndex}">
+
+                <TabItem Header="Advies">
+                    <Grid Margin="10">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" MinHeight="90" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="2*" MinHeight="120" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Border Grid.Row="0" Background="{StaticResource AccentLightBrush}" CornerRadius="4" Padding="14" Margin="0,0,0,10">
+                            <StackPanel>
+                                <TextBlock Text="Aanbevolen address prefix voor het nieuwe VNET" Foreground="{StaticResource HintBrush}" />
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,6"
+                                            Visibility="{Binding HasRecommendation, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBox Text="{Binding RecommendedPrefix, Mode=OneWay}" IsReadOnly="True"
+                                             FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"
+                                             Background="Transparent" BorderThickness="0" VerticalAlignment="Center" />
+                                    <Button Content="Kopiëren" Margin="12,0,0,0" VerticalAlignment="Center"
+                                            Command="{Binding CopyCommand}" CommandParameter="{Binding RecommendedPrefix}" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding AdviceText}" TextWrapping="Wrap">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding AdviceIsError}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Grid.Row="1" Text="Voorstellen (selecteer er één om de subnetindeling te zien)" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <DataGrid Grid.Row="2" IsReadOnly="True"
+                                  ItemsSource="{Binding Suggestions}"
+                                  SelectedItem="{Binding SelectedSuggestion}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Address prefix" Binding="{Binding Prefix}" Width="150" FontWeight="SemiBold" />
+                                <DataGridTextColumn Header="Range" Binding="{Binding Range}" Width="230" />
+                                <DataGridTextColumn Header="Adressen" Binding="{Binding Addresses}" Width="100" />
+                                <DataGridTextColumn Header="Zoekbereik" Binding="{Binding PoolText}" Width="130" />
+                                <DataGridTextColumn Header="" Binding="{Binding Remark}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="3" Text="{Binding LayoutTitle}" FontWeight="SemiBold" Margin="0,10,0,4" TextWrapping="Wrap" />
+                        <DataGrid Grid.Row="4" IsReadOnly="True" ItemsSource="{Binding LayoutRows}">
+                            <DataGrid.RowStyle>
+                                <Style TargetType="DataGridRow">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsFree}" Value="True">
+                                            <Setter Property="Foreground" Value="{StaticResource HintBrush}" />
+                                            <Setter Property="FontStyle" Value="Italic" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.RowStyle>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Subnet" Binding="{Binding Name}" Width="*" MinWidth="140" />
+                                <DataGridTextColumn Header="Address prefix" Binding="{Binding Prefix}" Width="140" FontWeight="SemiBold" />
+                                <DataGridTextColumn Header="Range" Binding="{Binding Range}" Width="220" />
+                                <DataGridTextColumn Header="Bruikbaar in Azure" Binding="{Binding UsableRange}" Width="220" />
+                                <DataGridTextColumn Header="# IP's" Binding="{Binding Usable}" Width="80" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <WrapPanel Grid.Row="5" Margin="0,8,0,0">
+                            <Button Content="Kopieer indeling" Command="{Binding CopyLayoutCommand}" Margin="0,0,6,4" />
+                            <Button Content="Kopieer als Azure CLI" Command="{Binding CopyCliCommand}" Margin="0,0,6,4" />
+                            <Button Content="Exporteer als CSV..." Command="{Binding ExportLayoutCommand}" Margin="0,0,6,4" />
+                            <Button Content="Controleer geselecteerd prefix" Command="{Binding CheckSuggestionCommand}" Margin="0,0,6,4" />
+                        </WrapPanel>
+                    </Grid>
+                </TabItem>
+
+                <TabItem Header="Prefix controleren">
+                    <DockPanel Margin="10">
+                        <StackPanel DockPanel.Dock="Top">
+                            <TextBlock Style="{StaticResource HintText}"
+                                       Text="Controleer of een zelfgekozen address prefix overlapt met bestaande VNETs, lokale netwerken of door Azure gereserveerde ranges." />
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,8">
+                                <TextBox Width="220" Padding="3" FontFamily="Consolas" FontSize="14"
+                                         Text="{Binding CheckPrefixText, UpdateSourceTrigger=PropertyChanged}">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Enter" Command="{Binding CheckPrefixCommand}" />
+                                    </TextBox.InputBindings>
+                                </TextBox>
+                                <Button Content="Controleer" Margin="8,0,0,0" Command="{Binding CheckPrefixCommand}" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding CheckResultText}" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,8">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding CheckState}" Value="free">
+                                                <Setter Property="Foreground" Value="{StaticResource SuccessBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding CheckState}" Value="conflict">
+                                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding CheckState}" Value="invalid">
+                                                <Setter Property="Foreground" Value="{StaticResource ErrorBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                        <DataGrid IsReadOnly="True" ItemsSource="{Binding CheckConflicts}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Soort" Binding="{Binding Kind}" Width="120" />
+                                <DataGridTextColumn Header="Address prefix" Binding="{Binding Prefix}" Width="130" FontWeight="SemiBold" />
+                                <DataGridTextColumn Header="VNET" Binding="{Binding VnetName}" Width="160" />
+                                <DataGridTextColumn Header="Subscription" Binding="{Binding Subscription}" Width="160" />
+                                <DataGridTextColumn Header="Resource group" Binding="{Binding ResourceGroup}" Width="150" />
+                                <DataGridTextColumn Header="Locatie" Binding="{Binding Location}" Width="100" />
+                                <DataGridTextColumn Header="Omschrijving" Binding="{Binding Description}" Width="*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem Header="Bezette adresruimte">
+                    <DockPanel Margin="10">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Filter:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                            <TextBox Width="260" Padding="3" Text="{Binding ReservedFilter, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{StaticResource HintBrush}">
+                                <Run Text="{Binding ReservedRows.Count, Mode=OneWay}" />
+                                <Run Text="ranges in totaal (bestaande VNETs, lokale netwerken en Azure-gereserveerd)" />
+                            </TextBlock>
+                        </StackPanel>
+                        <DataGrid IsReadOnly="True" ItemsSource="{Binding ReservedRowsView}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Soort" Binding="{Binding Kind}" Width="120" />
+                                <DataGridTextColumn Header="Address prefix" Binding="{Binding Prefix}" Width="130" FontWeight="SemiBold" />
+                                <DataGridTextColumn Header="Range" Binding="{Binding AddressRange}" Width="210" />
+                                <DataGridTextColumn Header="VNET" Binding="{Binding VnetName}" Width="160" />
+                                <DataGridTextColumn Header="Subscription" Binding="{Binding Subscription}" Width="160" />
+                                <DataGridTextColumn Header="Resource group" Binding="{Binding ResourceGroup}" Width="150" />
+                                <DataGridTextColumn Header="Locatie" Binding="{Binding Location}" Width="100" />
+                                <DataGridTextColumn Header="Omschrijving" Binding="{Binding Description}" Width="*" MinWidth="120" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </TabItem>
+
+                <TabItem>
+                    <TabItem.Header>
+                        <TextBlock>
+                            <Run Text="Meldingen (" /><Run Text="{Binding Warnings.Count, Mode=OneWay}" /><Run Text=")" />
+                        </TextBlock>
+                    </TabItem.Header>
+                    <DockPanel Margin="10">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource HintText}"
+                                   Text="Waarschuwingen uit de CSV-import en overlappingen tussen bestaande VNETs en/of lokale netwerken. Deze hebben geen invloed op het advies: alle bezette ranges worden vermeden." />
+                        <ListBox ItemsSource="{Binding Warnings}" Margin="0,4,0,0" />
+                    </DockPanel>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </DockPanel>
+</Window>
