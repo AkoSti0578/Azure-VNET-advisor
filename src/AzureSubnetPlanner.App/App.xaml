@@ -8,11 +8,29 @@
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
         <conv:EmptyToCollapsedConverter x:Key="EmptyToCollapsed" />
 
-        <SolidColorBrush x:Key="AccentBrush" Color="#0078D4" />
-        <SolidColorBrush x:Key="AccentLightBrush" Color="#EAF3FB" />
+        <!-- Yellow Spring colours: purple is the main accent, yellow highlights. -->
+        <SolidColorBrush x:Key="AccentBrush" Color="#6F2C91" />
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="#8A4FAB" />
+        <SolidColorBrush x:Key="AccentPressedBrush" Color="#2B1A36" />
+        <SolidColorBrush x:Key="AccentLightBrush" Color="#F3EDF7" />
+        <SolidColorBrush x:Key="AccentSoftBrush" Color="#E6D8EF" />
+        <SolidColorBrush x:Key="HighlightBrush" Color="#F3E04F" />
+        <SolidColorBrush x:Key="TextBrush" Color="#2B1A36" />
         <SolidColorBrush x:Key="ErrorBrush" Color="#C42B1C" />
         <SolidColorBrush x:Key="SuccessBrush" Color="#0F7B0F" />
-        <SolidColorBrush x:Key="HintBrush" Color="#5F6368" />
+        <SolidColorBrush x:Key="HintBrush" Color="#6B6B6B" />
+
+        <!-- Selection colours in lists, grids and text boxes (instead of Windows blue). -->
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#6F2C91" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="White" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#E6D8EF" />
+        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#2B1A36" />
+
+        <Style TargetType="StatusBar">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="6,2" />
+        </Style>
 
         <Style TargetType="GroupBox">
             <Setter Property="Margin" Value="0,0,0,10" />
@@ -20,7 +38,7 @@
             <Setter Property="HeaderTemplate">
                 <Setter.Value>
                     <DataTemplate>
-                        <TextBlock Text="{Binding}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding}" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}" />
                     </DataTemplate>
                 </Setter.Value>
             </Setter>
@@ -32,12 +50,38 @@
             <Setter Property="MinHeight" Value="26" />
         </Style>
 
+        <!-- Own template: the default button template replaces the background with Windows blue on hover. -->
         <Style x:Key="AccentButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Background" Value="{StaticResource AccentBrush}" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}" CornerRadius="4"
+                                BorderBrush="{StaticResource HighlightBrush}" BorderThickness="0,0,0,3"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentHoverBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentPressedBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderThickness" Value="2,2,2,3" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Background" Value="#BDBDBD" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="HintText" TargetType="TextBlock">
