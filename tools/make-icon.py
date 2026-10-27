@@ -1,7 +1,7 @@
 """Generates src/AzureSubnetPlanner.App/Assets/app.ico (and a 256px PNG preview).
 
 Usage: python3 tools/make-icon.py src/AzureSubnetPlanner.App/Assets/app.ico preview.png
-Colours: Yellow Spring yellow (#F3E04F) tile with Yellow Spring purple (#6F2C91) address-space rows.
+Colours: Yellow Spring yellow (#F3E04F) tile with a Yellow Spring purple (#6F2C91) V.
 """
 import struct, zlib, sys
 
@@ -14,23 +14,22 @@ def rrect(x, y, x0, y0, x1, y1, r):
     cy = min(max(y, y0 + r), y1 - r)
     return (x - cx) ** 2 + (y - cy) ** 2 <= r * r
 
+def segment_distance(u, v, ax, ay, bx, by):
+    dx, dy = bx - ax, by - ay
+    t = max(0.0, min(1.0, ((u - ax) * dx + (v - ay) * dy) / (dx * dx + dy * dy)))
+    return ((u - ax - t * dx) ** 2 + (v - ay - t * dy) ** 2) ** 0.5
+
 def sample(u, v):
-    # Yellow tile with purple "address space" rows: occupied blocks as filled bars,
-    # the recommended free block as an outlined slot.
+    # Yellow tile with a bold purple "V" (for VNET).
     if not rrect(u, v, 0.02, 0.02, 0.98, 0.98, 0.22):
         return (0, 0, 0, 0)
-    bars = [
-        (0.16, 0.17, 0.84, 0.33),   # row 1: fully occupied
-        (0.16, 0.42, 0.50, 0.58),   # row 2: occupied part
-        (0.16, 0.67, 0.36, 0.83),   # row 3: occupied part
-    ]
-    for b in bars:
-        if rrect(u, v, *b, 0.05):
+    half_width = max(0.085, 1.6 / SIZE)
+    top, bottom = 0.22, 0.78
+    if top <= v:
+        d = min(segment_distance(u, v, 0.26, top, 0.5, bottom),
+                segment_distance(u, v, 0.74, top, 0.5, bottom))
+        if d <= half_width:
             return PURPLE + (255,)
-    slot = (0.44, 0.67, 0.84, 0.83)  # row 3: free slot (outline)
-    t = max(0.045, 1.3 / SIZE)
-    if rrect(u, v, *slot, 0.05) and not rrect(u, v, slot[0] + t, slot[1] + t, slot[2] - t, slot[3] - t, 0.02):
-        return PURPLE + (255,)
     return YELLOW + (255,)
 
 def render(size, ss=4):
